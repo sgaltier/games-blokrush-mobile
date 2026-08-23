@@ -1,0 +1,17 @@
+<!--
+  Placeholder only. docs/mobile-migration.md Phase 4 replaces this with the
+  real neon brick-and-ball motif (built as vector XML, no raster, no
+  tooling); this bare ball exists only so the adaptive icon — and the
+  manifest that references it — is structurally valid before then. Phase 4
+  also owns the PNG mipmap-* fallbacks this icon needs for API 24-25, where
+  adaptive icons (this file) do not apply.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#2de2e6"
+        android:pathData="M54,34m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0" />
+</vector>

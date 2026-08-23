@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <!--
+      domain="root" covers the whole app data directory rather than a
+      narrower domain like "file" or "sharedpref" — the WebView's own
+      storage (app_webview/, holding the seven blokrush-* localStorage keys:
+      progress, best score, language, mute, achievements, and the resume
+      snapshot) is an internal WebView implementation detail, not a path this
+      app controls, so the broad rule is what reliably includes it. See
+      docs/mobile-migration.md Phase 2.
+    -->
+    <cloud-backup>
+        <include domain="root" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="root" path="." />
+    </device-transfer>
+</data-extraction-rules>

@@ -1,0 +1,7 @@
+# The Gradle wrapper must keep LF endings regardless of a contributor's or
+# CI runner's autocrlf setting — a CRLF gradlew fails outright on Linux CI
+# (docs/mobile-migration.md Phase 6), and there is no .gitattributes
+# elsewhere in this repo to fall back on.
+/android/gradlew text eol=lf
+/android/gradlew.bat text eol=crlf
+/android/gradle/wrapper/gradle-wrapper.jar binary

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/Theme.Blokrush"
+        android:usesCleartextTraffic="false">
+
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density"
+            android:exported="true"
+            android:resizeableActivity="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+            <!--
+                configChanges keeps rotation and the soft keyboard (the
+                hall-of-fame name field auto-focuses on entering `nameentry`,
+                index.html:3727) from destroying and rebuilding the WebView
+                mid-run.
+
+                resizeableActivity="false" is the actual portrait-lock
+                enforcement, not screenOrientation alone — see
+                docs/mobile-migration.md Phase 2 ("Portrait lock is not just
+                screenOrientation") for why, and for the large-screen caveat
+                where a foldable/tablet's OS may letterbox instead of
+                honouring this outright.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

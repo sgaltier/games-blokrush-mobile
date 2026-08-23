@@ -1,0 +1,17 @@
+[versions]
+# Verify these are still current before a release build — see
+# docs/mobile-migration.md Phase 7 on not trusting stale numbers.
+agp = "9.3.0"
+androidxActivity = "1.13.0"
+androidxCore = "1.19.0"
+androidxWebkit = "1.17.0"
+
+[libraries]
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "androidxActivity" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidxCore" }
+androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "androidxWebkit" }
+
+[plugins]
+# AGP 9's built-in Kotlin support compiles the Kotlin sources under app/ —
+# no separate org.jetbrains.kotlin.android plugin needed.
+android-application = { id = "com.android.application", version.ref = "agp" }

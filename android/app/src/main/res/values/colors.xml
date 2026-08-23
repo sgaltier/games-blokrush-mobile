@@ -1,0 +1,7 @@
+<resources>
+    <!-- Mirrors the bg-void custom property from index.html's palette
+         (index.html:23) — the "deep violet-black void" the whole cabinet
+         sits on. -->
+    <color name="void_bg">#0a0118</color>
+    <color name="ic_launcher_background">#0a0118</color>
+</resources>

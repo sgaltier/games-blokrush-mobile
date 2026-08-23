@@ -136,6 +136,31 @@ for a WebView.
 
 ## Phase 2 — The Android project (`android/`)
 
+> **✅ Shipped 2026-08-23.** The project skeleton, `MainActivity.kt`, manifest, and Gradle wrapper
+> exist under `android/` as this section describes, with three deviations worth recording:
+> - **Toolchain versions were taken from a live check, not this document's guesses**: AGP 9.3.0
+>   (built-in Kotlin — no `org.jetbrains.kotlin.android` plugin needed), Gradle 9.7.1,
+>   `androidx.core-ktx` 1.19.0, `androidx.activity` 1.13.0, `androidx.webkit` 1.17.0, `compileSdk`/
+>   `targetSdk` 36 (Android 16 — Play requires it for new apps/updates from 2026-08-31). Re-verify all
+>   of these before a release build; they will have moved on.
+> - **`MainActivity` extends `androidx.activity.ComponentActivity`, not `AppCompatActivity`** — a
+>   single always-dark WebView screen has no use for AppCompat/Material, so the app depends on
+>   `androidx.core`/`androidx.activity` directly (for `WindowCompat/WindowInsetsControllerCompat` and
+>   `OnBackPressedCallback`) plus `androidx.webkit`, rather than the "one dependency" this section
+>   originally described.
+> - **The launcher icon is a placeholder** (a bare vector circle) so the manifest resolves and the
+>   project is structurally buildable — Phase 4 replaces it with the real neon artwork and adds the
+>   API 24-25 PNG fallbacks adaptive icons don't cover.
+>
+> Verified as far as this environment allows: the wrapper downloads and checksum-verifies Gradle
+> 9.7.1, `./gradlew :app:syncGame` copies `html/index.html` into assets correctly, and
+> `./gradlew :app:assembleDebug` gets exactly as far as `SDK location not found` — i.e. everything
+> up to the Android SDK itself is confirmed working. Actually assembling and installing an APK needs
+> a real Android SDK, which this environment doesn't have — that part of Verification (below) is
+> still open. The back-button's dependency on `Escape` reaching `togglePause()` is already covered by
+> the existing `"Escape pauses"` test in `test/suites/state.js`, so the plan's `#111` was not needed
+> as a separate test.
+
 A plain Gradle project, no JS toolchain. Layout:
 
 ```

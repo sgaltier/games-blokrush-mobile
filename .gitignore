@@ -2,3 +2,20 @@
 
 # Wrangler's local cache, written by any `wrangler` invocation.
 .wrangler/
+
+# Android (docs/mobile-migration.md). local.properties holds the SDK path and
+# is machine-specific; the keystore files must never be committed — set this
+# up before android/ exists, not after.
+.gradle/
+android/build/
+android/app/build/
+local.properties
+*.apk
+*.aab
+*.jks
+*.keystore
+keystore.properties
+
+# Synced from html/index.html by the syncGame Gradle task at build time —
+# never a second, driftable copy of the game. See android/app/build.gradle.kts.
+android/app/src/main/assets/

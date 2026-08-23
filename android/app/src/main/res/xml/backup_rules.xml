@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The pre-API-31 (legacy Auto Backup) counterpart to
+  data_extraction_rules.xml — same reasoning, same domain="root" scope.
+-->
+<full-backup-content>
+    <include domain="root" path="." />
+</full-backup-content>

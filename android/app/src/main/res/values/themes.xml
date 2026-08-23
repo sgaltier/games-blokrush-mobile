@@ -1,0 +1,12 @@
+<resources>
+    <!-- No AppCompat/Material — a single always-dark WebView screen has no
+         use for either, and index.html's own cabinet theme "does not adapt
+         to light mode, the way a physical cabinet screen wouldn't either"
+         (index.html:16-17). This mirrors that at the native layer instead of
+         fighting it with a day/night theme. -->
+    <style name="Theme.Blokrush" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/void_bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>
