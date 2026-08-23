@@ -24,9 +24,36 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // Populated from environment variables rather than a committed
+    // keystore.properties, so the release job in .github/workflows/android.yml
+    // can drive it straight from repository secrets — see that file for the
+    // four secret names required. Reads ANDROID_KEYSTORE_PATH rather than
+    // decoding the keystore itself here, so the decoded file (and its
+    // cleanup) stays entirely the CI job's responsibility, not the build's.
+    // Left unset for every local/debug build: signingConfig below is only
+    // attached when the path is actually present.
+    val releaseKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+    signingConfigs {
+        if (releaseKeystorePath != null) {
+            create("release") {
+                storeFile = file(releaseKeystorePath)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (releaseKeystorePath != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+            // Without a signingConfig (every local build, and CI's plain
+            // `build` job) this produces an unsigned AAB/APK — buildable, not
+            // installable/uploadable. That's fine for "does it still
+            // compile"; only the release job needs a real signature.
         }
     }
 }

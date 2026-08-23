@@ -1,0 +1,93 @@
+name: android
+
+# Separate from test.yml deliberately (regressions.js pins that file's
+# permissions block, so it stays untouched) and only runs when there is
+# something Android-relevant to build: android/ itself, or html/index.html,
+# which android/app/build.gradle.kts's syncGame task copies into the app at
+# build time.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'html/**'
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'html/**'
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Build a signed release AAB instead of a debug APK'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # workflow_dispatch with release checked skips straight to the release
+    # job below; every other trigger (push, PR, or a plain manual run) just
+    # builds an unsigned debug APK to prove the project still assembles.
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.release) }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Assemble debug APK
+        run: ./gradlew :app:assembleDebug
+
+  release:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      # Decoded into the runner's temp dir, never into the repo checkout, and
+      # removed in the `if: always()` step below regardless of build outcome.
+      # Requires four repository secrets that do not exist yet — set them
+      # under Settings > Secrets and variables > Actions before using this
+      # job: ANDROID_KEYSTORE_BASE64 (base64 of the .jks/.keystore file),
+      # ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
+      - name: Decode signing keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+
+      - name: Build signed release AAB
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew :app:bundleRelease
+
+      - name: Remove decoded keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: blokrush-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error

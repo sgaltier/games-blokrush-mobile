@@ -370,6 +370,31 @@ void `#0a0118`, panel `#17102f`, neon cyan `#2de2e6`, magenta `#ff2e88`, amber `
 
 ## Phase 6 — Tests, docs, and CI
 
+> **✅ Shipped 2026-08-23.** Everything in this section except the CI workflow was already done as
+> part of Phases 1 and 3, ahead of reaching this section — each phase followed the established loop
+> (test → fix → done.md/todo.md → release-notes.md) as it landed, rather than deferring all testing
+> to the end. `#108`/`#109`/`#110` and their exact assertions are in `done.md` under Phase 1; the
+> CORS mirror-assertions are `#111`'s three tests under Phase 3; `#111 — Escape still reaches
+> togglePause` specifically was not added as its own test because the existing `"Escape pauses"` test
+> in `state.js` already pins that contract (noted in Phase 2's own status). Docs were re-anchored as
+> part of Phase 1's own edit, not as a separate pass.
+>
+> What was actually new here: `.github/workflows/android.yml` (JDK 17, `gradle/actions/setup-gradle`
+> for caching, `assemble Debug` on pushes/PRs touching `android/` or `html/`, plus a
+> `workflow_dispatch` release job building a signed AAB) and a matching `signingConfigs.release` in
+> `app/build.gradle.kts`, activated only when `ANDROID_KEYSTORE_PATH` is set so every local/debug
+> build stays unsigned and keystore-free. `test.yml` itself is untouched, as required. The release
+> job's four secrets (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`,
+> `ANDROID_KEY_PASSWORD`) do not exist in the repo yet — set them before the first real release build.
+>
+> Verified as far as this environment allows: `./gradlew :app:tasks` configures cleanly both with and
+> without the four env vars set (simulating the release job locally), and `assembleDebug` still fails
+> at exactly `SDK location not found`, same as before this change — the signing config addition
+> didn't introduce an earlier failure. The workflow YAML itself cannot be executed here (no GitHub
+> Actions runner); reviewed by hand instead. Action versions
+> (`checkout@v7`, `setup-java@v5`, `setup-gradle@v6`, `upload-artifact@v7`) came from a live check of
+> each action's own releases, not memory.
+
 Follow the established loop (testing.md): regression test → fix → move the finding from
 [todo.md](todo.md) to [done.md](done.md) with a `✅ FIXED` note → add a
 [release-notes.md](release-notes.md) entry. Numbering continues at **#108**.

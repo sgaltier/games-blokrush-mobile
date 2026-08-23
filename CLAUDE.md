@@ -123,12 +123,16 @@ The IIFE in `index.html` exposes nothing globally (see Single-file structure bel
 `Escape` keydown event rather than adding a JS bridge. No `addJavascriptInterface` anywhere.
 
 **Release procedure:** bump `versionCode` (and `versionName` if user-visible) in
-`android/app/build.gradle.kts` — every Play upload needs a fresh `versionCode`. Build a signed AAB
-(`./gradlew :app:bundleRelease`) using a keystore that is never committed (`.gitignore` covers
-`*.jks`/`*.keystore`/`keystore.properties`/`local.properties`); CI signing from repository secrets is
-tracked in `docs/mobile-migration.md` Phase 6, not yet implemented. Upload the AAB to the Play
-Console. See `docs/mobile-migration.md` Phase 7 for the account/testing-track requirements gating a
-production release.
+`android/app/build.gradle.kts` — every Play upload needs a fresh `versionCode`. Then run
+`.github/workflows/android.yml` via `workflow_dispatch` with `release: true`, which builds a signed
+AAB from four repository secrets (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+`ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` — not yet set; add them under Settings > Secrets and
+variables > Actions before the first release build) and uploads it as a workflow artifact. The
+keystore itself is never committed (`.gitignore` covers `*.jks`/`*.keystore`/`keystore.properties`/
+`local.properties`); `android/app/build.gradle.kts`'s `signingConfigs.release` only activates when
+`ANDROID_KEYSTORE_PATH` is set, so every local/debug build stays unsigned and keystore-free. Download
+the artifact and upload the AAB to the Play Console. See `docs/mobile-migration.md` Phase 7 for the
+account/testing-track requirements gating a production release.
 
 ## Architecture
 
