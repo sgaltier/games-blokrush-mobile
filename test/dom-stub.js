@@ -434,6 +434,11 @@ function boot(opts) {
   };
   globalThis.requestAnimationFrame = () => 0; // frames are driven by hand
 
+  // #108: API_URL's origin switch reads location.hostname at load time, so this
+  // has to exist before the script runs. Defaults to a plain web host; pass
+  // opts.hostname: "appassets.androidplatform.net" to exercise the Android path.
+  globalThis.location = { hostname: opts.hostname || "localhost" };
+
   // #67: the global hall of fame API. Offline by default — every suite written
   // before it existed must keep exercising the local-board fallback, and a test
   // that wants the world board has to say so. opts.api is a handler taking

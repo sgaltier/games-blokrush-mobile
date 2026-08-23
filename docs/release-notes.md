@@ -79,6 +79,7 @@ The project is not versioned or tagged, so entries are grouped by the commit tha
 | #105 | ✅ Fixed — 2026-08-22 |
 | #106 | ✅ Fixed — 2026-08-22 |
 | #107 | ✅ Fixed — 2026-08-22 |
+| #108, #109, #110 | ✅ Fixed — 2026-08-23 |
 
 97 of 98 fixed. The full-codebase review raised on 2026-08-21 is done, ten for ten, #64 (resume an
 interrupted run) has shipped alongside it, and #57 (laser-vs-bad-drop counterplay) closes out the §C
@@ -94,6 +95,72 @@ shape-checked), #106 (the hall-of-fame highlight is cleared at the start of ever
 isolates and other newer invisibles can no longer survive into a hall-of-fame name). `todo.md` is
 back down to zero open items, plus the feature ideas still there and the proposals in
 [feature-ideas.md](feature-ideas.md) not yet promoted to it.
+
+Phase 1 of the [Android migration plan](mobile-migration.md) shipped on 2026-08-23: #108 (the API
+origin now switches to the absolute production URL under the future app WebView's asset-loader
+origin), #109 (the layout fits a phone by height as well as width, and touch targets grew to
+Android's 48dp guideline), and #110 (the viewport opts into the display cutout and `.cabinet` pads
+for it). #111 onward continue the same numbering as the plan's remaining phases ship.
+
+---
+
+## 2026-08-23 — The viewport meta opts into the display cutout, and `.cabinet` clears it (#110)
+
+### Fixed
+
+The viewport meta was missing `viewport-fit=cover`, so a WebView reserves a notch or gesture-bar area
+as dead space instead of letting the page paint under it and handle the inset itself. It now carries
+`viewport-fit=cover, user-scalable=no` (the latter matching how the rest of the touch surface already
+behaves — pinch-zoom would otherwise fight the paddle-drag gesture), and `.cabinet` pads with
+`env(safe-area-inset-*)` on top of `body`'s own padding.
+
+### Tests
+
+A new structure.js assertion (`#110`) pins `viewport-fit=cover` on the meta tag; the safe-area padding
+rule is covered by `#109`'s CSS assertions on the same `.cabinet` rule below.
+
+---
+
+## 2026-08-23 — The layout now fits a phone screen by height, not just width (#109)
+
+### Fixed
+
+`.cabinet` had no height bound and `canvas` was `width: 100%; height: auto`, so its displayed size
+derived from its own backing-store attributes rather than its container — on a narrow phone the
+canvas alone rendered taller than the viewport, and the page scrolled (badly in landscape). The outer
+chain is now bounded on both axes: `height: 100dvh` on `.cabinet`, `min-height: 0` on the flex
+children so they can shrink below their content, an `aspect-ratio: 480 / 680` on `.screen` so it fits
+by whichever axis binds, and `canvas` switched to `height: 100%` to track `.screen` instead of
+deriving its own height. `fitCanvas()` and `pointerToLogical()` needed no changes — both already read
+`getBoundingClientRect()`. `.icon-btn` also grew from 34px to 44px (Android's 48dp touch-target
+guideline), and a landscape media query tightens the marquee and hides the tagline on a short
+landscape viewport.
+
+### Tests
+
+A new structure.js assertion (`#109`) pins the CSS rules that make the height-fit chain work — the
+harness has no layout engine, so it cannot measure pixels directly.
+
+---
+
+## 2026-08-23 — The API origin now switches under the Android app's asset-loader origin (#108)
+
+### Fixed
+
+`API_URL` was an unconditional relative `"/api/scores"`, which resolves fine on every origin the game
+has run on so far but not under `https://appassets.androidplatform.net`, the synthetic HTTPS origin
+`WebViewAssetLoader` will serve the game from once the Android shell exists (see
+[mobile-migration.md](mobile-migration.md) Phase 2). A relative URL there has nothing to resolve
+against, so the app would always fall back to the local board even while online. `API_URL` now
+resolves through `API_ORIGIN`, which is the absolute production origin only when
+`location.hostname === "appassets.androidplatform.net"`; every other origin — production, a Pages
+preview, `file://` — keeps the relative path, so previews stay pinned to their own preview D1.
+`apiFetch()` and `activeBoard()` needed no changes.
+
+### Tests
+
+A new regressions.js case (`#108`) boots the harness under both a normal web hostname and the Android
+asset host, and asserts the `fetch()` target on each.
 
 ---
 

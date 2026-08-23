@@ -5015,5 +5015,23 @@ module.exports = {
         a.eq(gamePattern, workerPattern, "the two strip patterns must be identical, the way PROFANITY_LIST already is (#89c)");
       },
     },
+    {
+      // #108: the API origin only switches to the absolute production URL under
+      // the Android WebView's synthetic asset host — every other origin keeps
+      // the relative path so Pages previews keep hitting their own preview D1.
+      name: "#108 — the API origin switches only on the Android asset host",
+      async fn(a) {
+        const web = boot({ hostname: "blokrush-preview.pages.dev", api: () => ({ scores: [], token: "tok-web" }) }).start();
+        await web.settle();
+        a.eq(web.apiCalls[0].url, "/api/scores", "a normal web host must keep the relative URL");
+
+        const app = boot({ hostname: "appassets.androidplatform.net", api: () => ({ scores: [], token: "tok-app" }) }).start();
+        await app.settle();
+        a.eq(
+          app.apiCalls[0].url, "https://blokrush.sebkiller.com/api/scores",
+          "the Android asset host must resolve to the absolute production URL"
+        );
+      },
+    },
   ],
 };

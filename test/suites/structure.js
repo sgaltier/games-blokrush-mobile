@@ -46,6 +46,28 @@ module.exports = {
       },
     },
     {
+      // #110: viewport-fit=cover opts into the display cutout/gesture-bar
+      // area so the Phase 1 safe-area padding on .cabinet has something to
+      // react to — without it the WebView reserves the cutout as dead space.
+      name: "#110 — the viewport meta opts into the display cutout",
+      fn(a) {
+        a.match(HTML, /<meta\s+name="viewport"[^>]*viewport-fit=cover/i);
+      },
+    },
+    {
+      // #109: the layout chain that lets .screen fit by height on a phone,
+      // not just by width — no layout engine here, so this only pins the
+      // CSS rules that make it work rather than measuring pixels.
+      name: "#109 — the cabinet does not exceed the viewport height",
+      fn(a) {
+        const style = HTML.slice(HTML.indexOf("<style>"), HTML.indexOf("</style>"));
+        a.match(style, /\.cabinet\s*\{[^}]*height:\s*100dvh/, "the cabinet must be bounded to the viewport height");
+        a.match(style, /\.play-row\s*\{[^}]*min-height:\s*0/, "the flex chain must be allowed to shrink below its content");
+        a.match(style, /\.screen-wrap\s*\{[^}]*min-height:\s*0/, "the flex chain must be allowed to shrink below its content");
+        a.match(style, /\.screen\s*\{[^}]*aspect-ratio:\s*480\s*\/\s*680/, "the screen must be pinned to the canvas's aspect ratio");
+      },
+    },
+    {
       name: "has a non-empty <title>",
       fn(a) {
         const m = HTML.match(/<title>([^<]*)<\/title>/i);

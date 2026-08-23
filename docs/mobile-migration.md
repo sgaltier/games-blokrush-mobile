@@ -68,6 +68,12 @@ These are enforced by tests, not convention. Violating them fails `node test/run
 
 ## Phase 1 — Make the game fit a phone (`html/index.html`)
 
+> **✅ Shipped 2026-08-23** as #108 (networking origin), #109 (the height-fit layout chain and touch
+> targets), and #110 (viewport-fit and safe areas) — see [done.md](done.md) for the fix write-ups and
+> the line numbers as they stand now. The line references below are as they were when this section
+> was written, i.e. **before** the edits it describes; they are not re-anchored, the same way a
+> `todo.md` entry's original write-up stays as historical record once it moves to `done.md`.
+
 The layout is width-driven only. `.cabinet` is a flex column capped at 640px; `canvas` is
 `width: 100%; height: auto` (index.html:318-324) with no height bound anywhere, so on a 400px-wide
 phone the canvas alone is ~504px and the marquee + HUD + effect bars + deck push the page past
@@ -181,13 +187,13 @@ still exactly one source of truth for the game.
   `WindowInsetsControllerCompat` in immersive-sticky mode; the CSS safe-area work from Phase 1 is
   what keeps content clear of the cutout and gesture bar.
 - `onPause()` → `webView.onPause(); webView.pauseTimers()`; `onResume()` → the reverse. This is what
-  stops the unconditional `requestAnimationFrame` loop (index.html:6510 boots it and it never
+  stops the unconditional `requestAnimationFrame` loop (index.html:6544 boots it and it never
   cancels, even on menus) from draining battery in the background. `pauseTimers()` is process-wide
   and is the correct lever here.
 - **Back button** — the game exposes nothing globally, so drive it through the existing keyboard
   path instead of adding a bridge:
   `webView.evaluateJavascript("window.dispatchEvent(new KeyboardEvent('keydown',{code:'Escape'}))", null)`.
-  index.html:3376 maps `Escape` to `togglePause()`. Register an `OnBackPressedCallback` that pauses
+  index.html:3410 maps `Escape` to `togglePause()`. Register an `OnBackPressedCallback` that pauses
   on first press and finishes the Activity on a second press within a few seconds. Zero changes to
   `index.html`, no seam widening.
 - No `addJavascriptInterface` anywhere — it is the classic WebView RCE surface and nothing here
@@ -195,7 +201,7 @@ still exactly one source of truth for the game.
 
 **`AndroidManifest.xml`** — `android:screenOrientation="portrait"`,
 `android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode|density"` so the
-soft keyboard (the hall-of-fame name field auto-focuses on entering `nameentry`, index.html:3693)
+soft keyboard (the hall-of-fame name field auto-focuses on entering `nameentry`, index.html:3727)
 and rotation do not destroy and rebuild the WebView mid-run,
 `android:windowSoftInputMode="adjustResize"`,
 `<uses-permission android:name="android.permission.INTERNET"/>`,
@@ -390,7 +396,7 @@ before submission rather than after a rejection.
    stretching into the landscape pane).
 8. Accessibility: system font size at 130% and 200%, and TalkBack on the overlay buttons.
 9. Performance on a mid-range device: the canvas sets `shadowBlur` inside per-entity draw loops at
-   ~12 sites (index.html:6100-6357), which is hundreds of blurred draws per frame and the most
+   ~12 sites (index.html:6134-6391), which is hundreds of blurred draws per frame and the most
    likely frame-rate problem. Profile a busy boss level before assuming it is fine; if it is not,
    that is a new numbered finding, not scope creep into this plan.
 

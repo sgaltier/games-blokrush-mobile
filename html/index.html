@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Blokrush — Casse-briques arcade</title>
 <style>
 /*
@@ -52,6 +52,7 @@ body {
   align-items: flex-start;
   justify-content: center;
   padding: clamp(12px, 3vw, 36px);
+  overflow: hidden;
 }
 
 .cabinet {
@@ -59,9 +60,14 @@ body {
   /* Widened from 560px now that the legend row is gone — nothing else needs
      that width budget, so the screen (and the canvas inside it) can use it. */
   max-width: 640px;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* Safe-area padding on top of body's own padding, so the marquee clears a
+     notch and the deck clears the gesture bar on devices with either. */
+  padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0)
+           env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
 }
 
 /* ---------- marquee ---------- */
@@ -293,11 +299,18 @@ body {
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
+  /* Lets the row shrink to whatever height the viewport actually has, instead
+     of refusing to shrink below its content — the thing that makes the
+     screen fit by height on a short viewport rather than pushing the page
+     into a scroll. */
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .screen-wrap {
   position: relative;
   flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   min-width: 0;
   border-radius: 16px;
@@ -313,12 +326,16 @@ body {
   overflow: hidden;
   background: var(--bg-screen);
   box-shadow: 0 0 0 1px #000 inset, 0 0 30px rgba(45,226,230,.08) inset;
+  aspect-ratio: 480 / 680;
+  max-width: 100%;
+  max-height: 100%;
+  margin-inline: auto;
 }
 
 canvas {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   touch-action: none;
   cursor: crosshair;
 }
@@ -688,8 +705,10 @@ canvas {
 .deck-btns { display: flex; gap: 8px; }
 
 .icon-btn {
-  width: 34px;
-  height: 34px;
+  /* 44px: at/above Android's 48dp touch-target guideline once the button's
+     own border and hit-testing slop are counted in. */
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
   border: 1px solid var(--line);
   background: var(--bg-deep);
@@ -727,6 +746,15 @@ canvas {
 @media (max-width: 420px) {
   .tagline { display: none; }
   .hud-label { letter-spacing: .06em; }
+}
+
+/* A short landscape viewport (a phone on its side) has almost no vertical
+   budget left once the deck and marquee are accounted for — hide the
+   tagline and tighten the marquee the same way the narrow-portrait rule
+   above does, just keyed on height instead of width. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .tagline { display: none; }
+  .marquee { padding: 8px 18px; }
 }
 </style>
 </head>
@@ -1084,9 +1112,10 @@ canvas {
 
   function fitCanvas() {
     var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-    // The canvas is styled `width: 100%; height: auto`, so its displayed size
-    // tracks its container rather than GAME_W — on a phone that's well under
-    // 480 CSS px. Allocating GAME_W * dpr regardless wastes memory and
+    // The canvas is styled `width: 100%; height: 100%` inside a `.screen`
+    // pinned to the GAME_W/GAME_H aspect ratio, so its displayed size tracks
+    // its container rather than GAME_W — on a phone that's well under 480
+    // CSS px. Allocating GAME_W * dpr regardless wastes memory and
     // fill-rate on pixels that never reach the screen. Scale the backing
     // store from the smaller of the two: never upsize past `dpr` (the
     // previous, still-correct behaviour whenever the canvas is displayed at
@@ -2856,7 +2885,12 @@ canvas {
   //   The local board is never retired: it is what keeps the game playable
   //   with no network, which the whole test harness also relies on.
   // ---------------------------------------------------------------------
-  var API_URL = "/api/scores";
+  // The app WebView serves the game from WebViewAssetLoader's synthetic origin, where a
+  // relative URL has nothing to resolve against. Every other origin — production, a Pages
+  // preview, file:// — keeps the relative path, so previews stay on the preview database.
+  var API_ORIGIN =
+    location.hostname === "appassets.androidplatform.net" ? "https://blokrush.sebkiller.com" : "";
+  var API_URL = API_ORIGIN + "/api/scores";
 
   // Resolves to parsed JSON, or null on any failure at all. Every network
   // problem collapses to the same "no global board" signal on purpose — the
