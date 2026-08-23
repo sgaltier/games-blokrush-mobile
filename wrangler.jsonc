@@ -8,7 +8,14 @@
   // Must match the Cloudflare Pages project name exactly (it took the repo
   // name at creation, not the game's). A mismatch does not fail the static
   // build — it just means this file is disregarded, silently dropping the
-  // bindings below.
+  // bindings below, which looks like "/api/scores is empty", not like an
+  // error (see CLAUDE.md).
+  // #112: this repo is `games-blokrush-mobile` (it was forked/renamed for the
+  // Android work), one word longer than the Pages project name below. That is
+  // deliberate — production is still this same project — but it means a
+  // second Pages project ever created from this repo would default to the
+  // repo's own name, not this one, and silently lose these bindings the same
+  // way. Verify the Pages project name in the dashboard before creating one.
   "name": "games-blokrush",
   "pages_build_output_dir": "./html",
 

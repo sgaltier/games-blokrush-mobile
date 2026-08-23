@@ -50,13 +50,43 @@ const RATE_CHECK_MAX_AGE_MS = (ABSOLUTE_MAX_SCORE / MAX_POINTS_PER_SEC) * 1000;
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 const RATE_MAX_SUBMISSIONS = 20;
 
-const json = (body, status) =>
+// #111: CORS allowlist for the Android app (docs/mobile-migration.md Phase
+// 2/3) — WebViewAssetLoader serves the game from this exact synthetic HTTPS
+// origin. blokrush.sebkiller.com is harmless to include and useful for local
+// testing. CORS is not a security boundary here: the endpoint is
+// unauthenticated and reachable by curl regardless of Origin. The allowlist
+// only stops a browser honouring cross-origin reads/writes from anywhere
+// else; the real defences stay the HMAC token, the nonce UNIQUE constraint,
+// the plausibility envelope, and the per-IP limiter below.
+const CORS_ALLOWED_ORIGINS = [
+  "https://appassets.androidplatform.net",
+  "https://blokrush.sebkiller.com",
+];
+
+// Vary: Origin always applies, since the response depends on the request's
+// Origin header even when that origin isn't allowlisted. Access-Control-
+// Allow-Origin is only ever the request's own Origin, echoed back — never
+// "*", never an arbitrary reflected value, never "null" — and only when it
+// is in the allowlist; otherwise it is omitted so the browser blocks the
+// response.
+function corsHeaders(origin) {
+  const headers = { vary: "Origin" };
+  if (CORS_ALLOWED_ORIGINS.includes(origin)) {
+    headers["access-control-allow-origin"] = origin;
+  }
+  return headers;
+}
+
+const json = (body, status, extraHeaders) =>
   new Response(JSON.stringify(body), {
     status: status || 200,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store",
-    },
+    headers: Object.assign(
+      {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store",
+      },
+      extraHeaders
+    ),
   });
 
 const enc = new TextEncoder();
@@ -221,56 +251,76 @@ function requireSecret(env) {
   return typeof secret === "string" && secret.length >= 16 ? secret : null;
 }
 
-export async function onRequestGet({ env }) {
+// The app's GET is otherwise unreadable and its application/json POST would
+// preflight into a 405 without this — a browser sends OPTIONS ahead of
+// either whenever the request is cross-origin.
+export async function onRequestOptions({ request }) {
+  return new Response(null, {
+    status: 204,
+    headers: Object.assign(corsHeaders(request.headers.get("Origin")), {
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-headers": "content-type",
+      "access-control-max-age": "86400",
+    }),
+  });
+}
+
+export async function onRequestGet({ request, env }) {
+  const cors = corsHeaders(request.headers.get("Origin"));
   const secret = requireSecret(env);
-  if (!secret) return json({ error: "not_configured" }, 503);
+  if (!secret) return json({ error: "not_configured" }, 503, cors);
   try {
-    return json({ scores: await readBoard(env.DB), token: await issueToken(secret) });
+    return json({ scores: await readBoard(env.DB), token: await issueToken(secret) }, 200, cors);
   } catch (e) {
-    return json({ error: "unavailable" }, 503);
+    return json({ error: "unavailable" }, 503, cors);
   }
 }
 
 export async function onRequestPost({ request, env }) {
+  const cors = corsHeaders(request.headers.get("Origin"));
   const secret = requireSecret(env);
-  if (!secret) return json({ error: "not_configured" }, 503);
+  if (!secret) return json({ error: "not_configured" }, 503, cors);
 
   // #92: without this, a cross-origin page can drive a visitor's browser into
   // POSTing here via a plain form submission (no CORS preflight needed for
   // those content types), burning that visitor's rate-limit budget under a
-  // name of the attacker's choosing. There are no CORS response headers for
-  // the attacker to read either way, but requiring JSON blocks the form-POST
-  // shape outright.
+  // name of the attacker's choosing. #111's allowlist does not replace this:
+  // it stops a browser reading the response from an unlisted origin, but a
+  // form submission's request still lands and still costs a rate-limit slot
+  // either way. Requiring JSON is what blocks the form-POST shape outright,
+  // and not incidentally is what forces the preflight the allowlist governs.
   const contentType = (request.headers.get("content-type") || "").toLowerCase();
   if (!contentType.startsWith("application/json")) {
-    return json({ error: "bad_request" }, 400);
+    return json({ error: "bad_request" }, 400, cors);
   }
 
   let body;
   try {
     body = await request.json();
   } catch (e) {
-    return json({ error: "bad_request" }, 400);
+    return json({ error: "bad_request" }, 400, cors);
   }
 
   const session = await readToken(secret, body && body.token);
-  if (!session) return json({ error: "bad_token" }, 403);
+  if (!session) return json({ error: "bad_token" }, 403, cors);
 
   const age = Date.now() - session.issuedAt;
   // A negative age means a token minted in the future — clock skew or a forgery
   // against a leaked secret. Either way it is not a run we can date.
-  if (age < MIN_RUN_MS || age > TOKEN_MAX_AGE_MS) return json({ error: "bad_session_age" }, 403);
+  if (age < MIN_RUN_MS || age > TOKEN_MAX_AGE_MS) {
+    return json({ error: "bad_session_age" }, 403, cors);
+  }
 
   const score = body.score;
   if (!Number.isInteger(score) || score <= 0 || score > ABSOLUTE_MAX_SCORE) {
-    return json({ error: "bad_score" }, 400);
+    return json({ error: "bad_score" }, 400, cors);
   }
   if (score > (Math.min(age, RATE_CHECK_MAX_AGE_MS) / 1000) * MAX_POINTS_PER_SEC) {
-    return json({ error: "implausible" }, 403);
+    return json({ error: "implausible" }, 403, cors);
   }
 
   let name = cleanName(body.name);
-  if (!name) return json({ error: "bad_name" }, 400);
+  if (!name) return json({ error: "bad_name" }, 400, cors);
   name = filterProfanity(name); // #77: silent substitution, not a rejection
 
   const ip = request.headers.get("cf-connecting-ip") || "unknown";
@@ -309,7 +359,7 @@ export async function onRequestPost({ request, env }) {
       .bind(ipHash, now, ipHash, now - RATE_WINDOW_MS, RATE_MAX_SUBMISSIONS)
       .run();
     if (!rateInsert.meta || rateInsert.meta.changes === 0) {
-      return json({ error: "rate_limited" }, 429);
+      return json({ error: "rate_limited" }, 429, cors);
     }
     // The UNIQUE constraint on nonce is the replay defence: a token that has
     // already bought a score fails here instead of inserting a duplicate.
@@ -318,8 +368,10 @@ export async function onRequestPost({ request, env }) {
       .bind(name, score, session.nonce, now)
       .run();
   } catch (e) {
-    if (String(e && e.message).includes("UNIQUE")) return json({ error: "already_submitted" }, 409);
-    return json({ error: "unavailable" }, 503);
+    if (String(e && e.message).includes("UNIQUE")) {
+      return json({ error: "already_submitted" }, 409, cors);
+    }
+    return json({ error: "unavailable" }, 503, cors);
   }
 
   // #100: the score is already stored at this point, so a read failure here
@@ -327,8 +379,8 @@ export async function onRequestPost({ request, env }) {
   // as "already_submitted" — it's a separate try, not folded into the one
   // above, so a broken read can never be misreported as the UNIQUE-replay case.
   try {
-    return json({ scores: await readBoard(env.DB) });
+    return json({ scores: await readBoard(env.DB) }, 200, cors);
   } catch (e) {
-    return json({ error: "unavailable" }, 503);
+    return json({ error: "unavailable" }, 503, cors);
   }
 }

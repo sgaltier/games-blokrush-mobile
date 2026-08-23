@@ -253,6 +253,16 @@ the Play Console/Android docs rather than trusting a number here).
 
 ## Phase 3 — CORS on the Pages Function (`functions/api/scores.js`)
 
+> **✅ Shipped 2026-08-23** as #111 (CORS) and #112 (the `wrangler.jsonc` name-mismatch comment) — see
+> [done.md](done.md) for the write-ups and current line numbers. One addition beyond this section's
+> spec: the existing `json()` helper grew a third `extraHeaders` parameter so the CORS headers could
+> thread through every response uniformly, rather than each handler building its own `Response`.
+> Verified live in-session (not just via the source-text regression tests, which is all `scores.js`
+> has had until now) by `import()`ing the module directly and calling the exported handlers against a
+> stubbed `env.DB` — confirmed the OPTIONS/GET behaviour for an allowlisted origin, a non-allowlisted
+> one, and no `Origin` header at all. Verification item 5 below (`curl -i -X OPTIONS ...` against the
+> live endpoint) is still open — it needs the actual Cloudflare deploy, not just this repo.
+
 Today the file has no `Access-Control-Allow-Origin` and no `onRequestOptions`. The app's `GET` would
 be unreadable and its `application/json` `POST` would preflight into a 405.
 

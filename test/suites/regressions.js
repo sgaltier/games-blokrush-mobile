@@ -4663,7 +4663,7 @@ module.exports = {
         // above (which narrows a D1 UNIQUE violation to "already_submitted"),
         // or a broken read could be misreported as a replay.
         const m = src.match(
-          /try\s*\{\s*return json\(\{ scores: await readBoard\(env\.DB\) \}\);\s*\}\s*catch \(e\) \{([\s\S]*?)\}\s*\}\s*$/
+          /try\s*\{\s*return json\(\{ scores: await readBoard\(env\.DB\) \}[^)]*\);\s*\}\s*catch \(e\) \{([\s\S]*?)\}\s*\}\s*$/
         );
         a.ok(m, "the final board read must be wrapped in its own try/catch, or #100 regresses");
         a.ok(
@@ -5030,6 +5030,95 @@ module.exports = {
         a.eq(
           app.apiCalls[0].url, "https://blokrush.sebkiller.com/api/scores",
           "the Android asset host must resolve to the absolute production URL"
+        );
+      },
+    },
+    {
+      // #111: the app's GET would be unreadable and its application/json POST
+      // would preflight into a 405 without this. scores.js has no D1/live
+      // invocation harness (see the #92/#100 tests above), so this reads the
+      // source the same way they do rather than calling the handlers.
+      name: "#111 — OPTIONS is exported, and the allowlist is exactly the Android app origin and production",
+      fn(a) {
+        const src = fs.readFileSync(
+          path.join(__dirname, "..", "..", "functions", "api", "scores.js"), "utf8"
+        );
+        a.ok(
+          /export async function onRequestOptions/.test(src),
+          "onRequestOptions must be exported, or the app's preflight 405s"
+        );
+        const listMatch = src.match(/CORS_ALLOWED_ORIGINS = \[([\s\S]*?)\];/);
+        a.ok(listMatch, "sanity: CORS_ALLOWED_ORIGINS must exist");
+        const origins = (listMatch[1].match(/"https:\/\/[^"]+"/g) || []).map((s) => s.slice(1, -1));
+        a.eq(
+          JSON.stringify(origins),
+          JSON.stringify(["https://appassets.androidplatform.net", "https://blokrush.sebkiller.com"]),
+          "the allowlist must be exactly the Android app's WebViewAssetLoader origin and production"
+        );
+        a.ok(
+          !/access-control-allow-origin['"]?\s*[:=]\s*["']\*/i.test(src),
+          "Access-Control-Allow-Origin must never be a literal wildcard, or the allowlist is pointless"
+        );
+      },
+    },
+    {
+      name: "#111 — every GET/POST response threads the CORS headers, not just the happy path",
+      fn(a) {
+        const src = fs.readFileSync(
+          path.join(__dirname, "..", "..", "functions", "api", "scores.js"), "utf8"
+        );
+        const getBody = src.slice(
+          src.indexOf("export async function onRequestGet"),
+          src.indexOf("export async function onRequestPost")
+        );
+        const postBody = src.slice(src.indexOf("export async function onRequestPost"));
+        for (const [name, body] of [["onRequestGet", getBody], ["onRequestPost", postBody]]) {
+          const calls = body.match(/\bjson\(\{[\s\S]*?\}(?:,\s*\d+)?(?:,\s*\w+)?\)/g) || [];
+          a.ok(calls.length > 0, `sanity: ${name} must call json() at least once`);
+          const missingCors = calls.filter((c) => !/,\s*cors\)$/.test(c));
+          a.empty(
+            missingCors,
+            `${name} has a response that skips CORS headers, so a browser could read some replies cross-origin and not others: ${missingCors.join("; ")}`
+          );
+        }
+      },
+    },
+    {
+      // #92 is unaffected by #111 — this pins that the content-type gate still
+      // runs before any CORS-allowlisted origin could rely on it being loosened.
+      name: "#111 — the content-type gate is not weakened for an allowlisted CORS origin",
+      fn(a) {
+        const src = fs.readFileSync(
+          path.join(__dirname, "..", "..", "functions", "api", "scores.js"), "utf8"
+        );
+        const postBody = src.slice(src.indexOf("export async function onRequestPost"));
+        const corsIdx = postBody.indexOf("corsHeaders(");
+        const contentTypeIdx = postBody.indexOf("content-type");
+        a.ok(corsIdx !== -1 && contentTypeIdx !== -1, "sanity: both must exist in onRequestPost");
+        a.ok(
+          corsIdx < contentTypeIdx,
+          "CORS headers must be computed before the content-type check runs, not conditionally skip it"
+        );
+        a.ok(
+          !/CORS_ALLOWED_ORIGINS\.includes[\s\S]{0,80}content-type/.test(postBody),
+          "the content-type check must not be gated on whether the origin is allowlisted"
+        );
+      },
+    },
+    {
+      // #112: wrangler.jsonc's "name" must equal the actual Cloudflare Pages
+      // project name, which does not track this repo's own name — a second
+      // Pages project created from this repo would default to the repo name
+      // and silently lose the D1 bindings. Pins the warning comment, the same
+      // way #92's test pins test.yml's permissions block.
+      name: "#112 — wrangler.jsonc flags that its name may not match this repo's name",
+      fn(a) {
+        const src = fs.readFileSync(
+          path.join(__dirname, "..", "..", "wrangler.jsonc"), "utf8"
+        );
+        a.ok(
+          /#112/.test(src) && /second Pages project/.test(src),
+          "the comment warning about a second Pages project defaulting to the repo name must still be present"
         );
       },
     },

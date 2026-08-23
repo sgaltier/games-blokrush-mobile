@@ -4318,6 +4318,82 @@ added here would be inert.
 
 ---
 
+### 111. ✅ FIXED — `functions/api/scores.js` has no CORS support, so the Android app can't reach it (M)
+> **Fixed 2026-08-23.** `scores.js` now allowlists exactly two origins —
+> `https://appassets.androidplatform.net` (the Android app's `WebViewAssetLoader` origin) and
+> `https://blokrush.sebkiller.com` — via a new `corsHeaders(origin)` helper
+> ([functions/api/scores.js:53-78](../functions/api/scores.js#L53-L78)) threaded into every response
+> from `onRequestGet`/`onRequestPost` (never a bare `json(...)` without it) and a new
+> `onRequestOptions` ([functions/api/scores.js:257-266](../functions/api/scores.js#L257-L266))
+> answering the preflight. `#111` covers the allowlist shape, that every response carries the
+> headers, and that the content-type gate (`#92`) isn't weakened for an allowlisted origin. Verified
+> live against the actual exported handlers, not just the source text — see the write-up below.
+
+Part of the mobile migration plan (Phase 3). Today the file has no `Access-Control-Allow-Origin` and
+no `onRequestOptions`. The Android app WebView serves the game from
+`https://appassets.androidplatform.net` ([mobile-migration.md](mobile-migration.md) Phase 2) — a
+real, distinct origin from `blokrush.sebkiller.com`, so its `GET` would be unreadable by the browser
+and its `application/json` `POST` would preflight into a 405 (no `onRequestOptions` to answer it).
+
+**Fix: an allowlist, not a wildcard.** `corsHeaders(origin)` always sets `Vary: Origin` (the response
+genuinely depends on the request's `Origin` header) and sets `Access-Control-Allow-Origin` to the
+request's own origin, echoed back, **only** when that origin is in `CORS_ALLOWED_ORIGINS` — never
+`"*"`, never an arbitrary reflected value, never `"null"`. `onRequestOptions` answers every preflight
+with `204` plus `Access-Control-Allow-Methods`/`-Headers`/`-Max-Age` unconditionally, and
+`Access-Control-Allow-Origin` only when allowlisted, so a non-allowlisted origin's preflight still
+succeeds at the HTTP level but the browser then blocks the actual request for lack of that header.
+The existing `json()` helper grew a third `extraHeaders` parameter so every call site — the happy
+path and every error path alike — carries the same headers; missing even one would let a browser
+read some replies cross-origin and silently block others.
+
+**CORS is not a security boundary here.** The endpoint is unauthenticated and reachable by `curl`
+regardless of `Origin` — the allowlist only changes what a *browser* will let a page read. The real
+defences are unchanged: the HMAC session token, the `nonce` UNIQUE constraint, the plausibility
+envelope, and the per-IP limiter. `#92`'s content-type gate — the actual defence against a drive-by
+form POST burning a visitor's rate-limit budget — is untouched and unconditional; it is also
+incidentally what forces the preflight the new allowlist then governs.
+
+**Carrier NAT caveat, flagged not fixed:** the limiter is 20 submissions per 10 minutes keyed on
+`cf-connecting-ip`. Mobile players behind CGNAT share a bucket. Left alone for launch; watch for
+`429`s once there is real app traffic.
+
+#### Tests
+
+- `#111` — `onRequestOptions` is exported and the allowlist is exactly the two expected origins, with
+  no literal wildcard anywhere in the file.
+- `#111` — every `json()` call inside `onRequestGet`/`onRequestPost` threads the CORS headers, not
+  just the success path.
+- `#111` — the content-type gate is computed and runs independently of whether the origin is
+  allowlisted.
+- Verified live in this session (not committed, no D1/live-invocation harness exists for this file —
+  see `#89c`/`#92`/`#107b` for the established read-the-source-as-text convention): `import()`ing the
+  module directly and calling the exported handlers with a stubbed `env.DB` confirmed the OPTIONS/GET
+  behaviour for an allowlisted origin, a non-allowlisted origin, and no `Origin` header at all, plus
+  that a `not_configured` 503 and a bad-content-type 400 both still carry the right CORS headers.
+
+---
+
+### 112. ✅ FIXED — `wrangler.jsonc`'s `name` doesn't match this repo's name, with nothing flagging why (S)
+> **Fixed 2026-08-23.** Extended the existing warning comment above `"name": "games-blokrush"`
+> ([wrangler.jsonc](../wrangler.jsonc)) to say explicitly that this repo is `games-blokrush-mobile` —
+> one word longer, and deliberately so, since production is still this same Pages project — and that
+> a *second* Pages project ever created from this repo would default to the repo's own name and
+> silently lose the D1 bindings the same way a plain name mismatch already does. `#112` pins the
+> comment.
+
+Part of the mobile migration plan (Phase 3), noticed while touching the same file for `#111`. The
+existing comment already explained that a name mismatch disregards the whole file and silently drops
+the D1 bindings (looking like an empty leaderboard, not an error), but didn't call out that this
+repo's own name no longer matches the value here — a detail easy to trip over if a second Pages
+project or a fresh `wrangler pages project create` is ever run from this repo without checking the
+dashboard first.
+
+#### Tests
+
+- `#112` — the warning comment about a second Pages project defaulting to the repo name is present.
+
+---
+
 ## Verification
 
 There is no test infrastructure in the repo, so verification is manual. After any selected change:

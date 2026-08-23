@@ -15,8 +15,9 @@ the docs), the same shape as the passes that produced #84–#93 and #95–#101, 
 (the first 2026-08-22 pass) live in [done.md](done.md) §J/§K, #102–#107 (the second pass) in §L,
 #84–#93 in §I, and every directly-requested feature so far in §H. #47, #50, #56, and #63 sit
 unshipped in [feature-ideas.md](feature-ideas.md); #62 was discarded outright rather than fixed.
-#108–#110, Phase 1 of the [Android migration plan](mobile-migration.md), have also shipped — see
-`done.md`.
+#108–#112, Phases 1 and 3 of the [Android migration plan](mobile-migration.md), have also shipped —
+see `done.md`. (Phase 2, the Android project skeleton, shipped too but added no index.html/scores.js
+findings of its own — see the plan doc.)
 
 **When an item here gets fixed:** the established loop (see [testing.md](testing.md)) is regression
 test → fix → move the finding's whole entry from this file to [done.md](done.md), prepending a
@@ -25,4 +26,4 @@ the historical record → add an entry to [release-notes.md](release-notes.md).
 
 **Line references, once written, are only valid against the current `index.html`** — the same
 re-anchoring discipline applies here as in `done.md`. New review findings go here, keeping the
-shared numbering: the next free number is **#111** (mobile-migration.md Phase 2's back-button finding).
+shared numbering: the next free number is **#113**.

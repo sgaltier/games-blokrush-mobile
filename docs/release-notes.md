@@ -80,6 +80,7 @@ The project is not versioned or tagged, so entries are grouped by the commit tha
 | #106 | ✅ Fixed — 2026-08-22 |
 | #107 | ✅ Fixed — 2026-08-22 |
 | #108, #109, #110 | ✅ Fixed — 2026-08-23 |
+| #111, #112 | ✅ Fixed — 2026-08-23 |
 
 97 of 98 fixed. The full-codebase review raised on 2026-08-21 is done, ten for ten, #64 (resume an
 interrupted run) has shipped alongside it, and #57 (laser-vs-bad-drop counterplay) closes out the §C
@@ -100,7 +101,45 @@ Phase 1 of the [Android migration plan](mobile-migration.md) shipped on 2026-08-
 origin now switches to the absolute production URL under the future app WebView's asset-loader
 origin), #109 (the layout fits a phone by height as well as width, and touch targets grew to
 Android's 48dp guideline), and #110 (the viewport opts into the display cutout and `.cabinet` pads
-for it). #111 onward continue the same numbering as the plan's remaining phases ship.
+for it). Phase 2 (the Android project skeleton under `android/`) shipped the same day but added no
+index.html/scores.js findings of its own. Phase 3 shipped #111 (CORS on `/api/scores`, allowlisting
+the Android app's origin and production, verified live against the exported handlers) and #112
+(`wrangler.jsonc` now flags that its `name` doesn't track this repo's own name). #113 onward continue
+the same numbering as the plan's remaining phases ship.
+
+---
+
+## 2026-08-23 — CORS on /api/scores, and a name-mismatch warning in wrangler.jsonc (#111, #112)
+
+### Fixed
+
+`functions/api/scores.js` had no `Access-Control-Allow-Origin` and no `onRequestOptions` — the
+Android app WebView serves the game from `https://appassets.androidplatform.net`
+([mobile-migration.md](mobile-migration.md) Phase 2), a real, distinct origin from
+`blokrush.sebkiller.com`, so its `GET` would be unreadable and its `application/json` `POST` would
+preflight into a 405. A new `corsHeaders(origin)` helper allowlists exactly two origins — the app and
+production — and is threaded into every response from `onRequestGet`/`onRequestPost`, plus a new
+`onRequestOptions` answers the preflight. The allowlist is hygiene, not a security boundary: the
+endpoint is unauthenticated and reachable by `curl` regardless of `Origin`; the real defences (the
+HMAC token, the `nonce` UNIQUE constraint, the plausibility envelope, the per-IP limiter, and #92's
+content-type gate) are all unchanged and unconditional.
+
+Separately, `wrangler.jsonc`'s `"name": "games-blokrush"` no longer matches this repo's own name
+(`games-blokrush-mobile`) — deliberately, since production is still the same Pages project — but
+nothing said so. The existing warning about a name mismatch silently dropping the D1 bindings now
+also explains that a *second* Pages project ever created from this repo would default to the repo's
+own name and hit the same trap.
+
+### Tests
+
+`scores.js` has no D1/live-invocation harness (see `#89c`/`#92`/`#107b`), so `#111`'s three new
+regressions.js cases follow the same read-the-source-as-text convention: the allowlist shape (exactly
+two origins, no literal wildcard), that every `json()` call site in both handlers threads the CORS
+headers, and that the content-type gate runs independently of whether the origin is allowlisted. Also
+verified live this session (not committed): `import()`ing the module and calling the exported
+handlers directly against a stubbed `env.DB` confirmed the OPTIONS/GET behaviour for an allowlisted
+origin, a non-allowlisted one, and no `Origin` header at all. `#112` pins the new wrangler.jsonc
+comment.
 
 ---
 
