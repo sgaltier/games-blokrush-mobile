@@ -4,11 +4,13 @@
 agp = "9.3.0"
 androidxActivity = "1.13.0"
 androidxCore = "1.19.0"
+androidxSplashscreen = "1.2.0"
 androidxWebkit = "1.17.0"
 
 [libraries]
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "androidxActivity" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidxCore" }
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "androidxSplashscreen" }
 androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "androidxWebkit" }
 
 [plugins]

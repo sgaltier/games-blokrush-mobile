@@ -50,4 +50,8 @@ dependencies {
     // WebViewAssetLoader — serves the synced index.html from a real,
     // allowlist-able HTTPS origin instead of file:///android_asset/.
     implementation(libs.androidx.webkit)
+    // Phase 4: keeps the launch frame on the void background instead of a
+    // white flash before the WebView paints — the most visible polish defect
+    // a reviewer would hit on a game this dark.
+    implementation(libs.androidx.core.splashscreen)
 }

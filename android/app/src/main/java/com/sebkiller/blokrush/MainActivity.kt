@@ -7,6 +7,8 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -31,6 +33,9 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Must come before super.onCreate() — see themes.xml's
+        // Theme.Blokrush.Starting for the theme half of this (Phase 4).
+        installSplashScreen()
         super.onCreate(savedInstanceState)
 
         // Edge-to-edge, immersive-sticky: system bars hide and reappear only
@@ -51,6 +56,13 @@ class MainActivity : ComponentActivity() {
             .build()
 
         webView = WebView(this).apply {
+            // The actual fix for the white-flash Phase 4 flags: WebView's own
+            // default background is opaque white until index.html's first
+            // paint, regardless of the splash screen or the Activity theme —
+            // it draws in a separate surface. Matching it to the void
+            // background is what closes the gap between the splash screen
+            // dismissing and the game's own dark canvas appearing.
+            setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.void_bg))
             settings.javaScriptEnabled = true
             // Without this all seven blokrush-* localStorage keys silently
             // no-op — no error surfaces, progress and the local board just

@@ -148,9 +148,8 @@ for a WebView.
 >   `androidx.core`/`androidx.activity` directly (for `WindowCompat/WindowInsetsControllerCompat` and
 >   `OnBackPressedCallback`) plus `androidx.webkit`, rather than the "one dependency" this section
 >   originally described.
-> - **The launcher icon is a placeholder** (a bare vector circle) so the manifest resolves and the
->   project is structurally buildable — Phase 4 replaces it with the real neon artwork and adds the
->   API 24-25 PNG fallbacks adaptive icons don't cover.
+> - **The launcher icon was a placeholder** (a bare vector circle) at Phase 2, just enough for the
+>   manifest to resolve — see Phase 4 below for the real artwork.
 >
 > Verified as far as this environment allows: the wrapper downloads and checksum-verifies Gradle
 > 9.7.1, `./gradlew :app:syncGame` copies `html/index.html` into assets correctly, and
@@ -291,6 +290,26 @@ repo name, the `name` will mismatch, the D1 binding will silently vanish, and `/
 ---
 
 ## Phase 4 — Branding and assets
+
+> **✅ Shipped 2026-08-23**, with one item still open: the icon, splash screen, and Play Store
+> graphics are done; **screenshots are blocked** — they need an actual emulator or device, which
+> this environment doesn't have (see Phase 2's own verification note). Two deviations from this
+> section's original spec:
+> - **The icon and Play Store graphics were generated with a PowerShell/System.Drawing script**
+>   (`android/branding/render-icon.ps1`, `render-feature-graphic.ps1`), not the "throwaway HTML page
+>   + browser capture" this section originally proposed. Both approaches are equally "no committed
+>   image-editor project" — this one turned out easier to get pixel-exact (no browser
+>   chrome/scrollbar to crop around) and its output is easy to verify programmatically (dimensions
+>   checked in-session, not eyeballed). The vector XML itself was still designed and reviewed as SVG
+>   in a browser first (same path-data grammar as Android's `pathData`) before being hand-transcribed
+>   — see the artifact link in this session's transcript.
+> - **The feature graphic's tagline is placeholder English** ("NEON ARCADE BREAKOUT"), not
+>   index.html's actual localized copy — worth a second pass once the Play listing's real FR/EN copy
+>   (Phase 7) exists, so the two don't drift.
+>
+> Re-run both render scripts if the icon's geometry or palette ever changes in
+> `ic_launcher_foreground.xml` — they are not wired into any build step, so nothing regenerates them
+> automatically.
 
 The repo has zero image files. Everything is generated from the existing palette (index.html:22-40:
 void `#0a0118`, panel `#17102f`, neon cyan `#2de2e6`, magenta `#ff2e88`, amber `#ffb627`, lime

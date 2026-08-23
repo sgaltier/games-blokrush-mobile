@@ -19,6 +19,7 @@
             android:exported="true"
             android:resizeableActivity="false"
             android:screenOrientation="portrait"
+            android:theme="@style/Theme.Blokrush.Starting"
             android:windowSoftInputMode="adjustResize">
             <!--
                 configChanges keeps rotation and the soft keyboard (the
@@ -32,6 +33,12 @@
                 screenOrientation") for why, and for the large-screen caveat
                 where a foldable/tablet's OS may letterbox instead of
                 honouring this outright.
+
+                theme overrides the application's Theme.Blokrush with the
+                Phase 4 splash variant — this is the only Activity, so the
+                override just scopes "starts on the splash theme" to where it
+                actually applies. installSplashScreen() in MainActivity swaps
+                back to Theme.Blokrush once the WebView is ready to paint.
             -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -9,4 +9,20 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
+
+    <!-- Phase 4: the Activity's theme at launch, before onCreate() ever runs
+         — this is what the launch window paints while the process cold-starts
+         and the WebView spins up, so it is what stands between "void
+         background" and "white flash" on a game this dark. windowSplashScreen
+         attributes here are androidx.core.splashscreen's own compat set (no
+         android: prefix), resolved back to the real platform SplashScreen on
+         API 31+ and emulated below it — not the framework-only
+         android:windowSplashScreen* attributes, which do nothing pre-31.
+         installSplashScreen() in MainActivity.onCreate() is what actually
+         swaps to postSplashScreenTheme once the WebView is ready to paint. -->
+    <style name="Theme.Blokrush.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/void_bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Blokrush</item>
+    </style>
 </resources>
