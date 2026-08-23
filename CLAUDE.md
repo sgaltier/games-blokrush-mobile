@@ -16,6 +16,9 @@ API unreachable the game falls back to the per-browser `localStorage` board, whi
 `file://` and the whole test suite run. Keep it that way — the single-file game working with no
 network is a constraint, not an accident.
 
+There is also an Android app in progress — [android/](android/), a native WebView shell around this
+same `index.html`, no second copy of the game. See the Android app section below.
+
 ## Commands
 
 ```
@@ -82,6 +85,50 @@ Production is `blokrush.sebkiller.com`. The domain is registered at Gandi and it
 a single `CNAME` from the `blokrush` subdomain to the project's `.pages.dev` hostname. The zone is
 deliberately *not* on Cloudflare: `sebkiller.com` carries live Gandi Mail (`MX` + SPF), and moving
 nameservers to gain one static subdomain would put that at risk for no benefit.
+
+## Android app
+
+Since the migration tracked in [docs/mobile-migration.md](docs/mobile-migration.md), `android/` holds
+a native Kotlin/Gradle WebView shell around the same `html/index.html` — no Capacitor, no TWA, no
+second copy of the game. Layout:
+
+```
+android/
+  settings.gradle.kts  build.gradle.kts  gradle/libs.versions.toml
+  gradle/wrapper/…     gradlew  gradlew.bat
+  branding/            render-icon.ps1, render-feature-graphic.ps1 (Play Store/mipmap PNGs)
+  app/
+    build.gradle.kts
+    src/main/AndroidManifest.xml
+    src/main/java/com/sebkiller/blokrush/MainActivity.kt
+    src/main/res/{values,mipmap-anydpi-v26,mipmap-*,drawable,xml}/…
+```
+
+`android/app/src/main/assets/` is **gitignored, not committed** — `app/build.gradle.kts`'s `syncGame`
+task copies `html/index.html` there on every build (wired into `preBuild`), so the game has exactly
+one source of truth and the two copies can never drift. Run `./gradlew :app:syncGame` (or any build
+task, which depends on it) after editing `index.html` and before testing the app.
+
+`MainActivity` serves the synced file through `WebViewAssetLoader` at
+`https://appassets.androidplatform.net/assets/index.html` rather than `file:///android_asset/` — this
+gives the page a real, allowlist-able HTTPS origin. That origin is why `functions/api/scores.js`'s
+CORS allowlist (`#111`) names `https://appassets.androidplatform.net` specifically instead of using a
+wildcard: it is the *only* origin the app can ever present, so the allowlist can be exact rather than
+permissive. `index.html`'s `API_ORIGIN` switch (`#108`) also keys off this exact hostname to resolve
+`/api/scores` to an absolute production URL, since a relative path has nothing to resolve against
+under the WebView's synthetic origin.
+
+The IIFE in `index.html` exposes nothing globally (see Single-file structure below), so
+`MainActivity` never calls into it directly — the back button, for instance, dispatches a synthetic
+`Escape` keydown event rather than adding a JS bridge. No `addJavascriptInterface` anywhere.
+
+**Release procedure:** bump `versionCode` (and `versionName` if user-visible) in
+`android/app/build.gradle.kts` — every Play upload needs a fresh `versionCode`. Build a signed AAB
+(`./gradlew :app:bundleRelease`) using a keystore that is never committed (`.gitignore` covers
+`*.jks`/`*.keystore`/`keystore.properties`/`local.properties`); CI signing from repository secrets is
+tracked in `docs/mobile-migration.md` Phase 6, not yet implemented. Upload the AAB to the Play
+Console. See `docs/mobile-migration.md` Phase 7 for the account/testing-track requirements gating a
+production release.
 
 ## Architecture
 

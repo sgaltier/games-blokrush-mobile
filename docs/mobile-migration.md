@@ -339,6 +339,13 @@ void `#0a0118`, panel `#17102f`, neon cyan `#2de2e6`, magenta `#ff2e88`, amber `
 
 ## Phase 5 — Repo hygiene
 
+> **✅ Shipped 2026-08-23.** `.gitignore` was already done in Phase 2 (it had to be, before
+> `android/` existed). `LICENSE` (all rights reserved, per the account owner's explicit choice —
+> not this document's default), `README.md`, and `html/privacy.html` are new; `CLAUDE.md` gained an
+> Android app section. Two decisions this section left open were confirmed directly with the account
+> owner rather than assumed: the license, and `contact@sebkiller.com` as the privacy policy's contact
+> address for removal requests.
+
 - **`.gitignore`** currently has four meaningful lines and covers nothing Android. Add `.gradle/`,
   `android/build/`, `android/app/build/`, `local.properties`, `*.apk`, `*.aab`, `*.jks`,
   `*.keystore`, `keystore.properties`, and `android/app/src/main/assets/`. **`local.properties` and

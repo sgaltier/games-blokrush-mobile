@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confidentialité / Privacy — Blokrush</title>
+<style>
+  * { box-sizing: border-box; }
+
+  :root {
+    --bg-void: #0a0118;
+    --bg-panel: #17102f;
+    --line: #322a58;
+    --text-primary: #f2eefc;
+    --text-dim: #9089b8;
+    --neon-cyan: #2de2e6;
+    --neon-magenta: #ff2e88;
+    --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  html, body {
+    background: var(--bg-void);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+  }
+
+  body {
+    margin: 0;
+    padding: clamp(20px, 5vw, 56px);
+    line-height: 1.6;
+  }
+
+  main {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: clamp(24px, 4vw, 32px);
+    margin: 0 0 6px;
+  }
+
+  h1 a {
+    color: var(--neon-cyan);
+    text-decoration: none;
+  }
+
+  .updated {
+    color: var(--text-dim);
+    font-size: 14px;
+    margin: 0 0 32px;
+  }
+
+  nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+
+  nav a {
+    color: var(--text-primary);
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 6px 14px;
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  nav a:hover, nav a:focus-visible {
+    border-color: var(--neon-cyan);
+  }
+
+  section {
+    padding-top: 8px;
+  }
+
+  section + section {
+    margin-top: 48px;
+    padding-top: 40px;
+    border-top: 1px solid var(--line);
+  }
+
+  h2 {
+    font-size: 22px;
+    color: var(--neon-cyan);
+  }
+
+  h3 {
+    font-size: 16px;
+    margin-top: 28px;
+  }
+
+  ul {
+    padding-left: 22px;
+  }
+
+  li + li {
+    margin-top: 8px;
+  }
+
+  a {
+    color: var(--neon-cyan);
+  }
+
+  code {
+    font-family: "Consolas", "SFMono-Regular", monospace;
+    font-size: 0.92em;
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1><a href="index.html">Blokrush</a></h1>
+  <p class="updated">Dernière mise à jour / Last updated: 23 août 2026</p>
+
+  <nav>
+    <a href="#fr">Français</a>
+    <a href="#en">English</a>
+  </nav>
+
+  <section id="fr" lang="fr">
+    <h2>Politique de confidentialité</h2>
+
+    <p>
+      Blokrush est un jeu qui fonctionne sans compte et sans connexion. Cette page décrit
+      exactement ce que le jeu envoie, ce qu'il conserve, et où.
+    </p>
+
+    <h3>Le tableau des scores mondial</h3>
+    <ul>
+      <li>
+        Un nom choisi par le joueur et un score ne sont envoyés à nos serveurs que si une partie
+        termine dans le top 10 mondial <strong>et</strong> que le joueur choisit de le soumettre
+        depuis l'écran de fin de partie. Rien n'est envoyé automatiquement.
+      </li>
+      <li>
+        Ce nom et ce score deviennent alors <strong>visibles publiquement</strong> et
+        <strong>permanents</strong> — le tableau des scores n'est jamais réinitialisé. Ne
+        choisissez pas un nom qui vous identifie si vous préférez rester anonyme.
+      </li>
+      <li>
+        L'adresse IP utilisée pour limiter le nombre de soumissions est hachée avec une clé
+        secrète avant d'être stockée ; l'adresse IP en clair n'est jamais conservée.
+      </li>
+    </ul>
+
+    <h3>Tout le reste : uniquement sur l'appareil</h3>
+    <p>
+      La progression dans la campagne, le meilleur score personnel, la langue choisie, l'état
+      muet/son, et les succès débloqués restent uniquement sur l'appareil (stockage local du
+      navigateur, ou de l'application). Rien de tout cela n'est envoyé à un serveur.
+    </p>
+
+    <h3>Ce que nous ne faisons pas</h3>
+    <p>
+      Pas d'analytique, pas de publicité, pas de kit de développement tiers, pas de compte
+      utilisateur, pas de suivi entre applications ou sites.
+    </p>
+
+    <h3>Suppression et contact</h3>
+    <p>
+      Pour demander le retrait d'un nom du tableau des scores mondial, ou pour toute question sur
+      cette politique, écrivez à
+      <a href="mailto:contact@sebkiller.com">contact@sebkiller.com</a>.
+    </p>
+  </section>
+
+  <section id="en" lang="en">
+    <h2>Privacy Policy</h2>
+
+    <p>
+      Blokrush works without an account and without signing in. This page describes exactly what
+      the game sends, what it keeps, and where.
+    </p>
+
+    <h3>The global hall of fame</h3>
+    <ul>
+      <li>
+        A player-chosen name and a score are sent to our servers only when a run finishes in the
+        global top 10 <strong>and</strong> the player chooses to submit it from the end-of-run
+        screen. Nothing is sent automatically.
+      </li>
+      <li>
+        That name and score then become <strong>publicly visible</strong> and
+        <strong>permanent</strong> — the board is never reset. Don't pick a name that identifies
+        you if you'd rather stay anonymous.
+      </li>
+      <li>
+        The IP address used to rate-limit submissions is hashed with a secret key before being
+        stored; the raw IP address is never kept.
+      </li>
+    </ul>
+
+    <h3>Everything else: on-device only</h3>
+    <p>
+      Campaign progress, your personal best score, your chosen language, mute state, and unlocked
+      achievements all stay on your device (browser or app local storage) only. None of it is sent
+      to a server.
+    </p>
+
+    <h3>What we don't do</h3>
+    <p>
+      No analytics, no ads, no third-party SDKs, no user account, no cross-app or cross-site
+      tracking.
+    </p>
+
+    <h3>Removal and contact</h3>
+    <p>
+      To request removal of a name from the global hall of fame, or for any question about this
+      policy, write to <a href="mailto:contact@sebkiller.com">contact@sebkiller.com</a>.
+    </p>
+  </section>
+
+  <footer>
+    This policy covers <code>blokrush.sebkiller.com</code> and the Blokrush Android app, which run
+    the same code against the same backend.
+  </footer>
+</main>
+</body>
+</html>
